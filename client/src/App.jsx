@@ -14,6 +14,7 @@ import Account from './pages/Account';
 import OcrPage from './pages/OcrPage';
 import AdminDashboard from './pages/AdminDashboard';
 import Cart from './pages/Cart';
+import LandingPage from './pages/LandingPage';
 import './App.css';
 
 const API_BASE = 'http://localhost:3000';
@@ -21,12 +22,15 @@ const API_BASE = 'http://localhost:3000';
 function App() {
   return (
     <Routes>
-      {/* Public routes */}
+      {/* Public landing page */}
+      <Route path="/" element={<LandingPage />} />
+
+      {/* Public auth routes */}
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
 
       {/* Protected routes */}
-      <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/medicines" element={<ProtectedRoute><Dashboard view="medicines" /></ProtectedRoute>} />
       <Route path="/upload" element={<ProtectedRoute><Dashboard view="upload" /></ProtectedRoute>} />
       <Route path="/chat" element={<ProtectedRoute><Dashboard view="chat" /></ProtectedRoute>} />
@@ -56,7 +60,7 @@ function PublicRoute({ children }) {
   }
 
   if (isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return children;
@@ -71,7 +75,7 @@ function Dashboard({ view: initialView }) {
   const [chatInput, setChatInput] = useState('');
   const [cartCount, setCartCount] = useState(0);
   const [addingToCart, setAddingToCart] = useState(null);
-  
+
   // OCR state
   const [ocrFile, setOcrFile] = useState(null);
   const [ocrPreview, setOcrPreview] = useState(null);
@@ -87,7 +91,7 @@ function Dashboard({ view: initialView }) {
   useEffect(() => {
     if (initialView) {
       setCurrentView(initialView);
-    } else if (location.pathname === '/') {
+    } else if (location.pathname === '/dashboard') {
       setCurrentView('medicines');
     } else if (location.pathname === '/chat') {
       setCurrentView('chat');
@@ -159,9 +163,9 @@ function Dashboard({ view: initialView }) {
         },
         body: JSON.stringify({ medicine_id: medicineId, quantity: 1 })
       });
-      
+
       const data = await res.json();
-      
+
       if (res.ok) {
         setCartCount(prev => prev + 1);
         // Refresh medicines to get updated stock
@@ -350,7 +354,7 @@ function Dashboard({ view: initialView }) {
                         {med.stock_status === 'in_stock' ? '✓ In Stock' : '✗ Out of Stock'}
                       </span>
                     </div>
-                    <button 
+                    <button
                       className="add-to-cart-btn"
                       onClick={() => handleAddToCart(med.medicine_id, med.name)}
                       disabled={addingToCart === med.medicine_id || med.quantity <= 0}
