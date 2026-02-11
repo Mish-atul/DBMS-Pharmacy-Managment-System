@@ -183,7 +183,7 @@ pharmacy-management/
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/Mishatull/DBMS-pharmacy.git
+git clone https://github.com/Mish-atul/test-dbms-repo.git
 cd "DBMS-pharmacy-management-"
 ```
 
@@ -289,7 +289,7 @@ This project is for educational purposes as part of DBMS Lab coursework.
 
 ## 👨‍💻 Author
 
-**Mishatull** - [GitHub](https://github.com/Mishatull)
+**Mish-atul** - [GitHub](https://github.com/Mish-atul)
 
 ---
 
