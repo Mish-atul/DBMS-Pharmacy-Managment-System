@@ -54,12 +54,21 @@ app.use(bodyParser.json());
 app.use(express.static('uploads'));
 
 // Database Connection
-const dbPath = path.join(__dirname, 'pharmacy.db');
+// In production (Render), use persistent disk at /var/data
+// In development, use local pharmacy.db
+const DATA_DIR = process.env.NODE_ENV === 'production' ? '/var/data' : __dirname;
+const dbPath = path.join(DATA_DIR, 'pharmacy.db');
+
+// Ensure data directory exists in production
+if (process.env.NODE_ENV === 'production' && !fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+
 const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
         console.error("Error opening database:", err.message);
     } else {
-        console.log("Connected to the SQLite database.");
+        console.log("Connected to the SQLite database at:", dbPath);
     }
 });
 

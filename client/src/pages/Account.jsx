@@ -77,8 +77,9 @@ export default function Account() {
         setMessage('');
     };
 
+    const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
     const avatarUrl = user?.avatar_url 
-        ? (user.avatar_url.startsWith('http') ? user.avatar_url : `http://localhost:3000${user.avatar_url}`)
+        ? (user.avatar_url.startsWith('http') ? user.avatar_url : `${API_BASE}${user.avatar_url}`)
         : null;
 
     return (

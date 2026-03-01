@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { Navigate } from 'react-router-dom';
 import './AdminDashboard.css';
 
-const API_BASE = 'http://localhost:3000';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export default function AdminDashboard() {
     const { token, isAdmin } = useAuth();
