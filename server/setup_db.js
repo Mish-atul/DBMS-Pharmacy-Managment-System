@@ -4,7 +4,12 @@ const csv = require('csv-parser');
 const path = require('path');
 const bcrypt = require('bcrypt');
 
-const dbPath = path.join(__dirname, 'pharmacy.db');
+const DATA_DIR = process.env.NODE_ENV === 'production' ? '/var/data' : __dirname;
+if (process.env.NODE_ENV === 'production' && !fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+
+const dbPath = path.join(DATA_DIR, 'pharmacy.db');
 const db = new sqlite3.Database(dbPath);
 
 db.serialize(() => {
