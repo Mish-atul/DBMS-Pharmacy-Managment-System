@@ -42,14 +42,39 @@ const JWT_SECRET = process.env.JWT_SECRET || 'demo_jwt_secret_change_in_producti
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 
+const normalizeOrigin = (origin) => (origin ? origin.replace(/\/$/, '') : origin);
+const configuredOrigin = normalizeOrigin(FRONTEND_URL);
+const allowedOrigins = new Set([
+    configuredOrigin,
+    'https://dbms-pharmacy-managment-system.vercel.app',
+    'http://localhost:5173'
+].filter(Boolean));
+
 // Initialize Gemini AI
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 // Middleware
 app.use(cors({
-    origin: FRONTEND_URL,
+    origin: (origin, callback) => {
+        // Allow server-to-server tools or curl requests without browser Origin header
+        if (!origin) return callback(null, true);
+
+        const normalized = normalizeOrigin(origin);
+
+        if (allowedOrigins.has(normalized)) {
+            return callback(null, true);
+        }
+
+        // Allow Vercel preview deployments
+        if (/^https:\/\/.*\.vercel\.app$/i.test(normalized)) {
+            return callback(null, true);
+        }
+
+        return callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
     credentials: true
 }));
+app.options('*', cors());
 app.use(bodyParser.json());
 app.use(express.static('uploads'));
 
