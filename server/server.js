@@ -100,8 +100,65 @@ const db = new sqlite3.Database(dbPath, (err) => {
         console.error("Error opening database:", err.message);
     } else {
         console.log("Connected to the SQLite database at:", dbPath);
+        ensureUsersSchema();
     }
 });
+
+function ensureUsersSchema() {
+    db.serialize(() => {
+        db.run(`
+            CREATE TABLE IF NOT EXISTS users (
+                user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT UNIQUE,
+                username TEXT UNIQUE,
+                password_hash TEXT,
+                google_id TEXT UNIQUE,
+                name TEXT,
+                age INTEGER,
+                health_problems TEXT,
+                avatar_url TEXT,
+                role TEXT DEFAULT 'user',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `, (createErr) => {
+            if (createErr) {
+                console.error('Failed creating users table:', createErr.message);
+                return;
+            }
+
+            db.all('PRAGMA table_info(users)', (pragmaErr, columns) => {
+                if (pragmaErr) {
+                    console.error('Failed reading users schema:', pragmaErr.message);
+                    return;
+                }
+
+                const existing = new Set(columns.map((c) => c.name));
+                const migrations = [
+                    ['email', 'ALTER TABLE users ADD COLUMN email TEXT'],
+                    ['username', 'ALTER TABLE users ADD COLUMN username TEXT'],
+                    ['password_hash', 'ALTER TABLE users ADD COLUMN password_hash TEXT'],
+                    ['google_id', 'ALTER TABLE users ADD COLUMN google_id TEXT'],
+                    ['name', 'ALTER TABLE users ADD COLUMN name TEXT'],
+                    ['age', 'ALTER TABLE users ADD COLUMN age INTEGER'],
+                    ['health_problems', 'ALTER TABLE users ADD COLUMN health_problems TEXT'],
+                    ['avatar_url', 'ALTER TABLE users ADD COLUMN avatar_url TEXT'],
+                    ['role', "ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'"],
+                    ['created_at', 'ALTER TABLE users ADD COLUMN created_at DATETIME']
+                ];
+
+                migrations.forEach(([col, sql]) => {
+                    if (!existing.has(col)) {
+                        db.run(sql, (alterErr) => {
+                            if (alterErr) {
+                                console.error(`Failed adding users.${col}:`, alterErr.message);
+                            }
+                        });
+                    }
+                });
+            });
+        });
+    });
+}
 
 // ============================================
 // Ensure upload directories exist
@@ -297,6 +354,7 @@ app.post('/api/auth/register', async (req, res) => {
         
         db.run(sql, [email, username || email.split('@')[0], passwordHash, name || ''], function(err) {
             if (err) {
+                console.error('Registration DB error:', err.message);
                 if (err.message.includes('UNIQUE constraint')) {
                     return res.status(400).json({ error: "Email or username already exists" });
                 }
