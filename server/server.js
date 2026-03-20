@@ -42,7 +42,14 @@ const JWT_SECRET = process.env.JWT_SECRET || 'demo_jwt_secret_change_in_producti
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 
-const normalizeOrigin = (origin) => (origin ? origin.replace(/\/$/, '') : origin);
+const normalizeOrigin = (origin) => {
+    if (!origin || typeof origin !== 'string') return origin;
+    return origin
+        .trim()
+        .replace(/[\r\n]/g, '')
+        .replace(/^['"]|['"]$/g, '')
+        .replace(/\/$/, '');
+};
 const configuredOrigin = normalizeOrigin(FRONTEND_URL);
 const allowedOrigins = new Set([
     configuredOrigin,
