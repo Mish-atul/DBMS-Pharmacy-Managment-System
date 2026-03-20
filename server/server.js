@@ -358,7 +358,7 @@ app.post('/api/auth/register', async (req, res) => {
                 if (err.message.includes('UNIQUE constraint')) {
                     return res.status(400).json({ error: "Email or username already exists" });
                 }
-                return res.status(500).json({ error: "Registration failed" });
+                return res.status(500).json({ error: "Registration failed", detail: err.message });
             }
 
             db.get("SELECT * FROM users WHERE user_id = ?", [this.lastID], (err, user) => {
