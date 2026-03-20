@@ -5,9 +5,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
+import { API_BASE } from '../config/api';
 import './Cart.css';
-
-const API_BASE = 'http://localhost:3000';
 
 export default function Cart({ onCartUpdate }) {
     const { token, user } = useAuth();

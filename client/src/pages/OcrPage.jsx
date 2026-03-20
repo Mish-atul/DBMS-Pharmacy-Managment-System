@@ -5,9 +5,8 @@
  */
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE } from '../config/api';
 import './OcrPage.css';
-
-const API_BASE = 'http://localhost:3000';
 
 export default function OcrPage() {
     const { token } = useAuth();

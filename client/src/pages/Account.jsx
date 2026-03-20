@@ -4,6 +4,7 @@
  */
 import React, { useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE } from '../config/api';
 import './Account.css';
 
 export default function Account() {
@@ -77,7 +78,6 @@ export default function Account() {
         setMessage('');
     };
 
-    const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
     const avatarUrl = user?.avatar_url 
         ? (user.avatar_url.startsWith('http') ? user.avatar_url : `${API_BASE}${user.avatar_url}`)
         : null;

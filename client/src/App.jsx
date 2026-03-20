@@ -15,9 +15,8 @@ import OcrPage from './pages/OcrPage';
 import AdminDashboard from './pages/AdminDashboard';
 import Cart from './pages/Cart';
 import LandingPage from './pages/LandingPage';
+import { API_BASE } from './config/api';
 import './App.css';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 function App() {
   return (
