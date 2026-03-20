@@ -81,7 +81,6 @@ app.use(cors({
     },
     credentials: true
 }));
-app.options('*', cors());
 app.use(bodyParser.json());
 app.use(express.static('uploads'));
 
