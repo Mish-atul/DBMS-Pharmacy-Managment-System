@@ -100,12 +100,13 @@ const db = new sqlite3.Database(dbPath, (err) => {
         console.error("Error opening database:", err.message);
     } else {
         console.log("Connected to the SQLite database at:", dbPath);
-        ensureUsersSchema();
+        initializeDatabase();
     }
 });
 
-function ensureUsersSchema() {
+function initializeDatabase() {
     db.serialize(() => {
+        // Create Users table
         db.run(`
             CREATE TABLE IF NOT EXISTS users (
                 user_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -120,44 +121,162 @@ function ensureUsersSchema() {
                 role TEXT DEFAULT 'user',
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
-        `, (createErr) => {
-            if (createErr) {
-                console.error('Failed creating users table:', createErr.message);
-                return;
-            }
+        `);
 
-            db.all('PRAGMA table_info(users)', (pragmaErr, columns) => {
-                if (pragmaErr) {
-                    console.error('Failed reading users schema:', pragmaErr.message);
+        // Create Medicines table
+        db.run(`
+            CREATE TABLE IF NOT EXISTS medicines (
+                medicine_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT,
+                composition TEXT,
+                uses TEXT,
+                side_effects TEXT,
+                image_url TEXT,
+                manufacturer TEXT,
+                quantity INTEGER DEFAULT 67,
+                price REAL DEFAULT 420,
+                excellent_review_pct REAL,
+                average_review_pct REAL,
+                poor_review_pct REAL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        // Create Cart Items table
+        db.run(`
+            CREATE TABLE IF NOT EXISTS cart_items (
+                cart_item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                medicine_id INTEGER NOT NULL,
+                quantity INTEGER DEFAULT 1,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(user_id),
+                FOREIGN KEY (medicine_id) REFERENCES medicines(medicine_id),
+                UNIQUE(user_id, medicine_id)
+            )
+        `);
+
+        // Create Orders table
+        db.run(`
+            CREATE TABLE IF NOT EXISTS orders (
+                order_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                total_amount REAL NOT NULL,
+                status TEXT DEFAULT 'completed',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(user_id)
+            )
+        `);
+
+        // Create Order Items table
+        db.run(`
+            CREATE TABLE IF NOT EXISTS order_items (
+                order_item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                order_id INTEGER NOT NULL,
+                medicine_id INTEGER NOT NULL,
+                medicine_name TEXT,
+                quantity INTEGER NOT NULL,
+                price_at_purchase REAL NOT NULL,
+                FOREIGN KEY (order_id) REFERENCES orders(order_id),
+                FOREIGN KEY (medicine_id) REFERENCES medicines(medicine_id)
+            )
+        `);
+
+        console.log("All tables created/verified.");
+
+        // Run migrations and seed data
+        runMigrationsAndSeed();
+    });
+}
+
+function runMigrationsAndSeed() {
+    // Seed admin user
+    const adminEmail = 'admin@pharmacy.demo';
+    const adminUsername = 'admin';
+    const adminPassword = 'admin123';
+
+    db.get("SELECT * FROM users WHERE email = ? OR username = ?", [adminEmail, adminUsername], (err, row) => {
+        if (!row) {
+            bcrypt.hash(adminPassword, 10, (hashErr, hash) => {
+                if (hashErr) {
+                    console.error("Error hashing admin password:", hashErr);
+                    checkAndSeed();
                     return;
                 }
-
-                const existing = new Set(columns.map((c) => c.name));
-                const migrations = [
-                    ['email', 'ALTER TABLE users ADD COLUMN email TEXT'],
-                    ['username', 'ALTER TABLE users ADD COLUMN username TEXT'],
-                    ['password_hash', 'ALTER TABLE users ADD COLUMN password_hash TEXT'],
-                    ['google_id', 'ALTER TABLE users ADD COLUMN google_id TEXT'],
-                    ['name', 'ALTER TABLE users ADD COLUMN name TEXT'],
-                    ['age', 'ALTER TABLE users ADD COLUMN age INTEGER'],
-                    ['health_problems', 'ALTER TABLE users ADD COLUMN health_problems TEXT'],
-                    ['avatar_url', 'ALTER TABLE users ADD COLUMN avatar_url TEXT'],
-                    ['role', "ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'"],
-                    ['created_at', 'ALTER TABLE users ADD COLUMN created_at DATETIME']
-                ];
-
-                migrations.forEach(([col, sql]) => {
-                    if (!existing.has(col)) {
-                        db.run(sql, (alterErr) => {
-                            if (alterErr) {
-                                console.error(`Failed adding users.${col}:`, alterErr.message);
-                            }
-                        });
+                db.run(
+                    `INSERT INTO users (email, username, password_hash, name, role) VALUES (?, ?, ?, ?, ?)`,
+                    [adminEmail, adminUsername, hash, 'Admin User', 'admin'],
+                    function(insertErr) {
+                        if (insertErr) {
+                            console.error("Error creating admin user:", insertErr);
+                        } else {
+                            console.log("Default admin user created: admin / admin123");
+                        }
+                        checkAndSeed();
                     }
+                );
+            });
+        } else {
+            console.log("Admin user already exists.");
+            checkAndSeed();
+        }
+    });
+}
+
+function checkAndSeed() {
+    db.get("SELECT COUNT(*) as count FROM medicines", (err, row) => {
+        if (err) {
+            console.error("Error checking medicines count:", err);
+            return;
+        }
+        if (row.count > 0) {
+            console.log("Medicines table already has data. Skipping seed.");
+        } else {
+            console.log("Seeding medicines from CSV...");
+            seedMedicines();
+        }
+    });
+}
+
+function seedMedicines() {
+    const csv = require('csv-parser');
+    const results = [];
+    const csvPath = path.join(__dirname, 'Medicine_Details.csv');
+
+    if (!fs.existsSync(csvPath)) {
+        console.error("CSV file not found at:", csvPath);
+        return;
+    }
+
+    fs.createReadStream(csvPath)
+        .pipe(csv())
+        .on('data', (data) => {
+            results.push([
+                data['Medicine Name'],
+                data['Composition'],
+                data['Uses'],
+                data['Side_effects'],
+                data['Image URL'],
+                data['Manufacturer'],
+                67,  // Default quantity
+                420, // Default price
+                parseFloat(data['Excellent Review %']) || 0,
+                parseFloat(data['Average Review %']) || 0,
+                parseFloat(data['Poor Review %']) || 0
+            ]);
+        })
+        .on('end', () => {
+            const stmt = db.prepare(`INSERT INTO medicines (name, composition, uses, side_effects, image_url, manufacturer, quantity, price, excellent_review_pct, average_review_pct, poor_review_pct) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+
+            db.serialize(() => {
+                db.run("BEGIN TRANSACTION");
+                results.forEach(row => stmt.run(row));
+                db.run("COMMIT", () => {
+                    console.log(`Seeding completed. Inserted ${results.length} medicines.`);
+                    stmt.finalize();
                 });
             });
         });
-    });
 }
 
 // ============================================
