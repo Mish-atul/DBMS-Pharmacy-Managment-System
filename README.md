@@ -354,3 +354,4 @@ This project is for educational purposes as part of DBMS Lab coursework.
 - Tesseract.js for OCR processing
 - Spline for 3D graphics
 - React & Vite for the frontend framework
+
