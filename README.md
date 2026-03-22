@@ -2,6 +2,38 @@
 
 A comprehensive full-stack web application for pharmacy management with modern features including JWT authentication, shopping cart with checkout, AI-powered health assistant with 3D avatar, prescription OCR with fuzzy matching, and an admin inventory dashboard.
 
+**Live Demo**: https://acceptable-flow-production.up.railway.app/
+
+---
+
+## 🏗️ System Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      Client (React 19 + Vite)               │
+│   Landing │ Login │ Signup │ Dashboard │ Cart │ Account    │
+│         Admin Dashboard │ OCR Scanner │ AI Chatbot         │
+└─────────────────────────┬───────────────────────────────────┘
+                          │ HTTP/REST (JWT Bearer Token)
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│                  Server (Node.js + Express 5)               │
+│                                                             │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌─────────┐ │
+│  │   Auth   │  │  Cart &  │  │   OCR    │  │  Chat   │ │
+│  │  (JWT)   │  │ Checkout │  │ (Tesseract│  │ (Gemini)│ │
+│  └──────────┘  └──────────┘  └──────────┘  └─────────┘ │
+│         │              │              │             │      │
+│         └──────────────┴──────────────┴─────────────┘      │
+│                              │                              │
+│                              ▼                              │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │              SQLite3 Database (pharmacy.db)           │  │
+│  │  users │ medicines │ cart_items │ orders │ order_items│  │
+│  └──────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+```
+
 ---
 
 ## 🚀 Features
@@ -30,7 +62,7 @@ A comprehensive full-stack web application for pharmacy management with modern f
 
 ### 4. **AI Chatbot with RAG & 3D Avatar** 🤖
 - **3D Interactive Avatar**: Powered by **Spline 3D** for an immersive experience.
-- **Intelligent NLP**: Uses **Google Gemini 2.5 Flash** (with auto-fallback to **Gemini 1.5 Flash**).
+- **Intelligent NLP**: Uses **Google Gemini** via `@google/genai`.
 - **Context-Aware Suggestions**: The bot extracts symptoms from your query, searches the local inventory database, and suggests *only* medicines that are actually in stock.
 - **Two-Step RAG Pipeline**:
   1. **Keyword Extraction**: AI extracts medical symptoms/keywords from user queries.
@@ -38,7 +70,7 @@ A comprehensive full-stack web application for pharmacy management with modern f
   3. **Contextual Response**: AI generates responses based on available inventory.
 
 ### 5. **Prescription Digitization (OCR) with Fuzzy Matching** 📷
-- Upload prescription images (PNG, JPG, JPEG) up to 20MB.
+- Upload prescription images (PNG, JPG, JPEG).
 - Powered by **Tesseract.js** with English language support.
 - **Fuzzy Matching**: Uses `string-similarity` to match handwritten/unclear medicine names.
 - **Confidence Levels**: High (≥80%), Medium (≥60%), Low (<60%) match indicators.
@@ -58,7 +90,7 @@ A comprehensive full-stack web application for pharmacy management with modern f
 
 | Layer | Technology |
 |-------|------------|
-| **Frontend** | React 19, Vite 7, React Router 7, Spline 3D, CSS3 (Custom Properties) |
+| **Frontend** | React 19.2, Vite 7.2, React Router 7, Spline 3D, Framer Motion, CSS3 |
 | **Backend** | Node.js, Express 5 |
 | **Database** | SQLite3 |
 | **Authentication** | JWT (jsonwebtoken), bcrypt |
@@ -72,46 +104,48 @@ A comprehensive full-stack web application for pharmacy management with modern f
 ## 📂 Project Structure
 
 ```
-pharmacy-management/
-├── package.json                # Root package.json
-├── README.md                   # This file
+DBMS-Pharmacy-Managment-System/
+├── railway.json               # Railway deployment config
+├── railway.json               # Railway deployment config
+├── DEPLOYMENT.md              # Deployment guide
+├── PROJECT_CONTEXT.md         # Architecture & API docs
 │
-├── client/                     # React Frontend (Vite)
+├── client/                    # React Frontend (Vite)
 │   ├── package.json
-│   ├── vite.config.js          # Vite configuration
-│   ├── eslint.config.js        # ESLint rules
-│   ├── index.html              # HTML entry point
-│   ├── public/                 # Static assets
+│   ├── vite.config.js
+│   ├── eslint.config.js
+│   ├── index.html
+│   ├── vercel.json            # Vercel deployment config
+│   ├── public/
 │   └── src/
-│       ├── main.jsx            # React entry point with Router
-│       ├── App.jsx             # Main app with routes & dashboard
-│       ├── App.css             # Application styles
-│       ├── index.css           # Global styles
+│       ├── main.jsx           # React entry point with Router
+│       ├── App.jsx            # Main app with routes & dashboard
+│       ├── App.css
+│       ├── index.css
+│       ├── config/
+│       │   └── api.js         # API base URL configuration
 │       ├── context/
 │       │   └── AuthContext.jsx # JWT auth state management
 │       ├── components/
-│       │   └── ProtectedRoute.jsx # Route guard component
-│       ├── pages/
-│       │   ├── Login.jsx       # Login page
-│       │   ├── Signup.jsx      # Registration page
-│       │   ├── Account.jsx     # User profile page
-│       │   ├── Cart.jsx        # Shopping cart & checkout
-│       │   ├── OcrPage.jsx     # Enhanced OCR scanner
-│       │   ├── AdminDashboard.jsx # Admin inventory management
-│       │   └── *.css           # Page-specific styles
-│       └── assets/             # Images, icons, etc.
+│       │   └── ProtectedRoute.jsx
+│       └── pages/
+│           ├── Login.jsx
+│           ├── Signup.jsx
+│           ├── Account.jsx
+│           ├── Cart.jsx
+│           ├── OcrPage.jsx
+│           ├── LandingPage.jsx
+│           └── AdminDashboard.jsx
 │
-└── server/                     # Node.js Backend
+└── server/                    # Node.js Backend
     ├── package.json
-    ├── .env.example            # Environment variables template
-    ├── server.js               # Express API server
-    ├── setup_db.js             # Database initialization
+    ├── .env.example
+    ├── server.js              # Express API server
+    ├── setup_db.js            # Database initialization
     ├── middleware/
-    │   └── auth.js             # JWT verification middleware
-    ├── Medicine_Details.csv    # Source dataset (11K+ medicines)
-    ├── eng.traineddata         # Tesseract language data
-    ├── pharmacy.db             # SQLite database (generated)
-    └── uploads/                # Uploaded images (rx, avatars)
+    │   └── auth.js            # JWT verification middleware
+    ├── uploads/              # Uploaded images (rx, avatars)
+    └── pharmacy.db           # SQLite database (generated on setup)
 ```
 
 ---
@@ -134,8 +168,8 @@ pharmacy-management/
 ### Medicines
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
-| `GET` | `/api/medicines` | Get all medicines (limit 100) | JWT |
-| `GET` | `/api/medicines?search=<term>` | Search medicines | JWT |
+| `GET` | `/api/medicines` | Get medicines (limit 100) | Optional |
+| `GET` | `/api/medicines?search=<term>` | Search medicines | Optional |
 
 ### Shopping Cart
 | Method | Endpoint | Description | Auth |
@@ -183,8 +217,8 @@ pharmacy-management/
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/Mish-atul/test-dbms-repo.git
-cd "DBMS-pharmacy-management-"
+git clone https://github.com/Mish-atul/DBMS-Pharmacy-Managment-System.git
+cd DBMS-Pharmacy-Managment-System
 ```
 
 ### 2. Install Dependencies
@@ -278,6 +312,27 @@ Client runs on: `http://localhost:5173`
 - **Role-Based Access Control**: Admin-only routes
 - **Input Validation**: Server-side validation
 - **SQL Injection Prevention**: Parameterized queries
+- **CORS Protection**: Configured allowed origins
+
+---
+
+## 🚂 Deployment
+
+### Railway (Recommended)
+The project is configured for Railway deployment with `railway.json`.
+
+1. Connect your GitHub repository to Railway
+2. Deploy the **server** with root directory `server/`
+3. Deploy the **client** with root directory `client/`
+4. Set environment variables:
+   - `JWT_SECRET`
+   - `GEMINI_API_KEY`
+   - `FRONTEND_URL` (your Railway frontend URL)
+
+**Live App**: https://acceptable-flow-production.up.railway.app/
+
+### Vercel + Render
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed instructions.
 
 ---
 
